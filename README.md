@@ -22,7 +22,7 @@ Im Fenster E-Mail-Adresse eingeben. Der Server wird automatisch gefunden. Dann d
 
 **Updates:** Beim Start fragt das Plugin, ob eine neue Version installiert werden soll. Dafür erscheint ein Fenster.
 
-## B: Online-Server für Claude im Browser und am Handy
+## B: Online-Server für Claude im Browser
 
 Diese Variante läuft auf einem Server bei Google Cloud. Claude im Browser und in der App spricht mit diesem Server. Sie ist technisch aufwendiger als Variante A.
 
@@ -42,7 +42,7 @@ Wichtig:
 - Claude zeigt dir die Mail im Chat (Absender, Empfänger, Betreff, Text).
 - Du schreibst **„absenden“**. Erst dann wird gesendet.
 - In Variante A kann pro Konto eine Bestätigung im Fenster verlangt werden. Das ist standardmäßig eingeschaltet.
-- Online-Variante: Mit **html** kann eine HTML-Fassung (Fettdruck, Absätze) mitgesendet werden. Die Freigabeseite zeigt sie in einer Vorschau ohne Skripte.
+- Online-Variante: Mit **html** kann eine HTML-Fassung (Fettdruck, Absätze) mitgesendet werden.
 - **Sendelimit (Online-Variante):** Pro Postfach höchstens 10 Mails pro Stunde, insgesamt höchstens 30. Das schützt vor Massenversand. Einstellbar über `MAILMASTER_MAX_PRO_STUNDE` und `MAILMASTER_MAX_GESAMT_PRO_STUNDE`. Empfänger sind nicht eingeschränkt.
 - **Entwürfe:** `create_draft` legt einen Entwurf im Entwürfe-Ordner des Kontos ab, ohne zu senden.
 - **Antworten:** `reply_mail` antwortet auf eine Mail per UID. Die Antwort hängt sich mit In-Reply-To und References an den Verlauf.
@@ -52,8 +52,7 @@ Wichtig:
 - **Alle Ordner eines Kontos anzeigen:** Spam, Papierkorb, Gesendet, Entwürfe und eigene Ordner. Die Namen kommen direkt vom Anbieter.
 - **In einem Ordner suchen oder lesen:** Der Standard ist der Posteingang, ein anderer Ordner kann angegeben werden.
 - **In allen Ordnern suchen:** Eine Suche über alle Ordner eines Kontos, mit Ordnername je Treffer. Ordner, die nicht geöffnet werden können, werden übersprungen.
-- **Papierkorb festlegen (empfohlen, wenn Löschen nicht klappt):** In der Cloud Shell `cd server && python3 set_trash.py <adresse> <ordnername>`, z. B. `python3 set_trash.py name@beispiel.de INBOX.Trash`. Den Ordnernamen zeigt `list_folders`. Der Dienst wird danach aktualisiert.
-- **Löschen:** `delete_mail` verschiebt die Mail in den Papierkorb des Kontos. Den Papierkorb erkennt der Server am Anbieter-Flag `\Trash` (bei Freenet z. B. `INBOX.Trash`). Nichts wird endgültig entfernt.
+- **Papierkorb festlegen (empfohlen):** In der Cloud Shell `cd server && python3 set_trash.py <adresse> <ordnername>`, z. B. `python3 set_trash.py name@beispiel.de INBOX.Trash`. Den Ordnernamen zeigt `list_folders`. Der Dienst wird danach aktualisiert.
 - **Verschieben:** `move_mail` nennt den Zielordner. Auch „Papierkorb“, „Spam“, „Gesendet“, „Entwürfe“ und „Archiv“ werden dem echten Ordnernamen zugeordnet. Die Mail wird mit MOVE oder UID EXPUNGE aus dem Quellordner entfernt. Wenn der Anbieter beides nicht kann, wird vorher abgebrochen und nichts kopiert, damit keine Doppel entstehen.
 - **Ordner anlegen:** `create_folder`.
 
@@ -80,6 +79,6 @@ Pro Postfach läuft immer nur eine Verbindung gleichzeitig. Bei Verbindungsabbr�
 ## Sicherheit
 
 - Variante A: Passwörter liegen im Schlüsselbund des Systems auf deinem Rechner.
-- Variante B: Passwörter liegen in Google Cloud Run. Freigaben sind nur für dich möglich.
+- Variante B: Passwörter liegen in Google Cloud Run. Gesendet wird erst nach dem Wort „absenden“ im Chat.
 - Die Verbindung zum Mailserver prüft das Serverzertifikat.
 - Mails werden nie an Dritte weitergegeben. Die Server-Adresse aus Variante B gilt als Geheimnis.

@@ -1,11 +1,8 @@
-"""MailMaster als Online-Server für Claude im Browser und am Handy (MCP über HTTP).
+"""MailMaster als Online-Server für Claude (MCP über HTTP).
 
 Konfiguration über Umgebungsvariablen:
 - MAILMASTER_TOKEN: geheimer Pfad-Teil, den du in Claude als Connector-Adresse einträgst
 - MAILMASTER_ACCOUNTS: JSON-Liste der Postfächer inklusive Passwort
-- MAILMASTER_NTFY_TOPIC: geheimer Name eines ntfy-Themas, auf dem dein Handy Freigaben bekommt
-- MAILMASTER_PUBLIC_URL: öffentliche Adresse dieses Servers, für den Freigabe-Link
-- MAILMASTER_CHAT_FREIGABE: "1" = Mails nach Chat-Bestätigung direkt senden (ohne Handy)
 - MAILMASTER_MAX_PRO_STUNDE: höchstens so viele Mails pro Stunde je Postfach (Standard 10)
 - MAILMASTER_MAX_GESAMT_PRO_STUNDE: höchstens so viele Mails pro Stunde insgesamt (Standard 30)
 """
@@ -18,12 +15,10 @@ import imaplib
 import json
 import os
 import re
-import secrets
 import smtplib
 import ssl
 import threading
 import time
-import urllib.request
 from contextlib import contextmanager
 from email.header import decode_header, make_header
 from email.message import EmailMessage
@@ -35,9 +30,6 @@ from urllib.parse import urlparse
 TOKEN = os.environ.get("MAILMASTER_TOKEN", "")
 KONTEN = json.loads(os.environ.get("MAILMASTER_ACCOUNTS", "[]"))
 PROTOKOLL = "2025-06-18"
-NTFY_THEMA = os.environ.get("MAILMASTER_NTFY_TOPIC", "")
-PUBLIC_URL = os.environ.get("MAILMASTER_PUBLIC_URL", "").rstrip("/")
-FREIGABE_GÜLTIG = 600
 ORDNER_CACHE_SEKUNDEN = 300
 ANHANG_MAX = 5 * 1024 * 1024
 # Schutz vor Massenversand: höchstens so viele Mails pro Stunde, je Postfach und insgesamt
@@ -45,7 +37,6 @@ SENDE_MAX_KONTO = int(os.environ.get("MAILMASTER_MAX_PRO_STUNDE", "10"))
 SENDE_MAX_GESAMT = int(os.environ.get("MAILMASTER_MAX_GESAMT_PRO_STUNDE", "30"))
 _sende_zeiten = []
 _sende_lock = threading.Lock()
-_offen = {}
 _sperre = threading.Lock()
 _konto_sperren = {}
 _konto_sperren_lock = threading.Lock()
@@ -337,15 +328,6 @@ def _mail_senden(konto, empfaenger, betreff, text, html_text=None, kopf=None):
             smtp.send_message(nachricht)
 
 
-def _handy_benachrichtigen(titel, text, link):
-    if not NTFY_THEMA:
-        raise ValueError("Keine Handy-Freigabe eingerichtet (MAILMASTER_NTFY_TOPIC fehlt).")
-    anfrage = urllib.request.Request(
-        f"https://ntfy.sh/{NTFY_THEMA}", data=text.encode("utf-8"), method="POST",
-        headers={"Title": titel, "Click": link, "Priority": "high", "Tags": "email"})
-    urllib.request.urlopen(anfrage, timeout=10).read()
-
-
 def _gültige_adresse(adresse):
     name, reine_adresse = parseaddr(adresse)
     return bool(name == "" and reine_adresse == adresse and re.fullmatch(r"[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+", adresse))
@@ -360,22 +342,8 @@ def _senden_oder_anfragen(konto, an, betreff, text, html_text=None, kopf=None, z
         raise ValueError("Der Text der Mail ist leer.")
     if html_text and not text:
         text = _html_zu_text(html_text)
-    if konto.get("auto_send") or os.environ.get("MAILMASTER_CHAT_FREIGABE") == "1":
-        _mail_senden(konto, an, betreff, text, html_text, kopf)
-        return f"Gesendet von {konto['user']} an {an}."
-    freigabe_id = secrets.token_urlsafe(16)
-    geheim = secrets.token_urlsafe(24)
-    with _sperre:
-        _offen[freigabe_id] = {"geheim": geheim, "konto": konto, "an": an, "betreff": betreff,
-                               "text": text, "html": html_text, "kopf": kopf, "zusatz": zusatz,
-                               "ablauf": time.time() + FREIGABE_GÜLTIG}
-    link = f"{PUBLIC_URL}/freigabe/{freigabe_id}/{geheim}"
-    _handy_benachrichtigen(
-        "MailMaster: Mail senden?",
-        f"Von: {konto['user']}\nAn: {an}\nBetreff: {betreff}\n\nDie komplette Mail steht auf der Seite, die sich beim Tippen öffnet. 10 Minuten gültig.",
-        link)
-    return ("Die Mail wartet auf deine Freigabe auf dem Handy. "
-            "Der Nutzer muss den Link in der Benachrichtigung öffnen. Sag dem Nutzer, dass er das tun muss.")
+    _mail_senden(konto, an, betreff, text, html_text, kopf)
+    return f"Gesendet von {konto['user']} an {an}."
 
 
 def send_mail(args):
@@ -409,48 +377,6 @@ def reply_mail(args):
     antwort_kopf = {"In-Reply-To": mid, "References": referenzen}
     return _senden_oder_anfragen(konto, an, betreff, text, html_text, antwort_kopf,
                                  zusatz=f"Antwort auf: {orig_betreff}")
-
-
-def freigabe_seite(freigabe_id, geheim):
-    with _sperre:
-        eintrag = _offen.get(freigabe_id)
-        if eintrag is None or not hmac.compare_digest(eintrag["geheim"], geheim):
-            return "<h2>Freigabe nicht gefunden oder abgelaufen.</h2>"
-    if time.time() > eintrag["ablauf"]:
-        return "<h2>Freigabe abgelaufen. Bitte die Mail erneut anfragen.</h2>"
-    felder = {"Von": eintrag["konto"]["user"], "An": eintrag["an"], "Betreff": eintrag["betreff"]}
-    if eintrag.get("zusatz"):
-        felder["Hinweis"] = eintrag["zusatz"]
-    zeilen = "".join(f"<p><b>{html.escape(k)}:</b> {html.escape(v)}</p>" for k, v in felder.items())
-    vorschau_html = ""
-    if eintrag.get("html"):
-        # sandbox ohne Skripte und ohne Zugriff auf diese Seite
-        vorschau_html = ("<p><b>HTML-Vorschau (ohne Skripte):</b></p>"
-                         f"<iframe sandbox='' srcdoc='{html.escape(eintrag['html'], quote=True)}' "
-                         "style='width:100%;height:360px;border:1px solid #ccc;background:#fff'></iframe>")
-    pfad = f"/freigabe/{freigabe_id}/{geheim}"
-    return (f"<html><head><meta charset='utf-8'><title>MailMaster</title></head>"
-            f"<body style='font-family:sans-serif;max-width:640px;margin:2em auto'>"
-            f"<h2>Mail senden?</h2>{zeilen}"
-            f"<p><b>Text:</b></p>"
-            f"<pre style='white-space:pre-wrap;background:#f3f3f3;padding:12px'>{html.escape(eintrag['text'])}</pre>"
-            f"{vorschau_html}"
-            f"<form method='post' action='{html.escape(pfad)}'>"
-            f"<button type='submit' style='padding:12px 24px;font-size:16px'>Ja, senden</button></form>"
-            f"</body></html>")
-
-
-def freigeben(freigabe_id, geheim):
-    with _sperre:
-        eintrag = _offen.get(freigabe_id)
-        if eintrag is None or not hmac.compare_digest(eintrag["geheim"], geheim):
-            return "Freigabe nicht gefunden oder abgelaufen."
-        del _offen[freigabe_id]
-    if time.time() > eintrag["ablauf"]:
-        return "Freigabe abgelaufen. Bitte die Mail erneut anfragen."
-    _mail_senden(eintrag["konto"], eintrag["an"], eintrag["betreff"], eintrag["text"],
-                 eintrag.get("html"), eintrag.get("kopf"))
-    return f"Gesendet von {eintrag['konto']['user']} an {eintrag['an']}."
 
 
 class _TextAusHtml(HTMLParser):
@@ -627,39 +553,6 @@ def move_mail(args):
     return f"Mail {uid} von '{von}' nach '{ziel}' verschoben."
 
 
-def delete_mail(args):
-    """Verschiebt eine Mail in den Papierkorb. Entweder per uid oder per search.
-    Bei search wird nur verschoben, wenn genau eine Mail passt. Sonst passiert nichts."""
-    konto = _einzelkonto(args)
-    von = args.get("folder") or "INBOX"
-    suche = (args.get("search") or "").strip()
-    uid = str(args.get("uid", "")).strip()
-    if not suche and not uid.isdigit():
-        raise ValueError("Bitte uid (Nummer aus der Suche) oder search (Suchbegriff) angeben.")
-    with _sitzung(konto) as imap:
-        liste = _ordnerliste(imap, konto, neu=True)
-        papierkorb = _papierkorb(konto, liste)
-        if not papierkorb:
-            raise ValueError("Kein Papierkorb gefunden. Mit list_folders die Ordner prüfen.")
-        if von.lower() == papierkorb.lower():
-            return "Die Mail liegt schon im Papierkorb."
-        if suche:
-            imap.select(_ordner_name(von), readonly=True)
-            _, daten = imap.uid("SEARCH", None, _suche_pruefen(suche))
-            ids = (daten[0] or b"").split()
-            if not ids:
-                return f"Keine Mail gefunden für '{suche}'. Nichts verschoben."
-            if len(ids) > 1:
-                zeilen = "\n".join(_zeile(u, k) for u, k in reversed(_kopfzeilen(imap, ids[-10:])))
-                return (f"{len(ids)} Mails passen auf '{suche}'. Nichts verschoben. "
-                        f"Bitte genauer suchen oder die UID wählen:\n{zeilen}")
-            uid = ids[0].decode()
-        beschreibung = "\n".join(_zeile(u, k) for u, k in _kopfzeilen(imap, [uid.encode()]))
-        _verschieben(imap, uid, von, papierkorb)
-    _ordner_cache.pop(konto["user"], None)
-    return f"Mail {uid} aus '{von}' in den Papierkorb '{papierkorb}' verschoben.\n{beschreibung}"
-
-
 def create_draft(args):
     """Legt einen Entwurf im Entwürfe-Ordner des Kontos ab. Es wird nichts gesendet."""
     konto = _einzelkonto(args)
@@ -740,16 +633,6 @@ WERKZEUGE = {
                    "required": ["account", "uid", "to_folder"]},
         "funktion": move_mail,
     },
-    "delete_mail": {
-        "beschreibung": ("Löscht eine Mail, indem sie in den Papierkorb des Kontos verschoben wird. Die Mail wird nicht "
-                         "endgültig entfernt. Entweder 'uid' (aus search_mail) oder 'search' (Suchbegriff, z. B. 'FROM \"Hörgeräte\"') angeben. "
-                         "Bei 'search' passiert nur etwas, wenn genau eine Mail passt."),
-        "schema": {"type": "object", "properties": {"account": {"type": "string"}, "uid": {"type": "string"},
-                   "search": {"type": "string", "description": "IMAP-Suche, muss genau eine Mail treffen"},
-                   "folder": {"type": "string", "description": "Ordner der Mail, Standard INBOX"}},
-                   "required": ["account"]},
-        "funktion": delete_mail,
-    },
     "create_draft": {
         "beschreibung": ("Legt einen Entwurf im Entwürfe-Ordner des Kontos ab. Es wird nichts gesendet. "
                          "'to' ist optional. 'html' ist optional."),
@@ -808,7 +691,7 @@ WERKZEUGE = {
     },
     "send_mail": {
         "beschreibung": ("Sendet eine Mail. Vorher den Inhalt im Chat zeigen und auf das Wort 'absenden' vom Nutzer warten. "
-                         "Erst dann aufrufen. Es gibt keine Freigabe auf dem Handy. 'html' ist optional für Fettdruck, Absätze und Links; "
+                         "Erst dann aufrufen. 'html' ist optional für Fettdruck, Absätze und Links; "
                          "'body' bleibt dann als reine Textfassung erhalten."),
         "schema": {"type": "object", "properties": {
             "account": {"type": "string"}, "to": {"type": "string"}, "subject": {"type": "string"},
@@ -820,7 +703,7 @@ WERKZEUGE = {
     "reply_mail": {
         "beschreibung": ("Antwortet auf eine Mail (uid aus search_mail). Die Antwort landet im selben Verlauf "
                          "(In-Reply-To und References). Vorher den Inhalt im Chat zeigen und auf das Wort 'absenden' warten. "
-                         "Es gibt keine Freigabe auf dem Handy."),
+                         ""),
         "schema": {"type": "object", "properties": {
             "account": {"type": "string"}, "uid": {"type": "string"},
             "folder": {"type": "string", "description": "Ordner der Original-Mail, Standard INBOX"},
@@ -880,11 +763,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         teile = urlparse(self.path).path.strip("/").split("/")
-        if len(teile) == 3 and teile[0] == "freigabe":
-            länge = int(self.headers.get("Content-Length", 0))
-            self.rfile.read(länge)
-            self._html(f"<html><head><meta charset='utf-8'></head><body style='font-family:sans-serif'><h2>{html.escape(freigeben(teile[1], teile[2]))}</h2></body></html>")
-            return
         if not self._pfad_gültig():
             self.send_response(404)
             self.end_headers()
@@ -910,9 +788,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         teile = urlparse(self.path).path.strip("/").split("/")
-        if len(teile) == 3 and teile[0] == "freigabe":
-            self._html(freigabe_seite(teile[1], teile[2]))
-            return
         self.send_response(404)
         self.end_headers()
 
