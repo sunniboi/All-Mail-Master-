@@ -3,6 +3,7 @@
 Konfiguration über Umgebungsvariablen:
 - MAILMASTER_TOKEN: geheimer Pfad-Teil, den du in Claude als Connector-Adresse einträgst
 - MAILMASTER_ACCOUNTS: JSON-Liste der Postfächer inklusive Passwort
+- MAILMASTER_CHAT_FREIGABE: "1" = Senden erlaubt (Standard: aus, dann wird nichts gesendet)
 - MAILMASTER_MAX_PRO_STUNDE: höchstens so viele Mails pro Stunde je Postfach (Standard 10)
 - MAILMASTER_MAX_GESAMT_PRO_STUNDE: höchstens so viele Mails pro Stunde insgesamt (Standard 30)
 """
@@ -342,6 +343,9 @@ def _senden_oder_anfragen(konto, an, betreff, text, html_text=None, kopf=None, z
         raise ValueError("Der Text der Mail ist leer.")
     if html_text and not text:
         text = _html_zu_text(html_text)
+    if not (konto.get("auto_send") or os.environ.get("MAILMASTER_CHAT_FREIGABE") == "1"):
+        raise ValueError("Senden ist nicht freigeschaltet. Der Betreiber muss MAILMASTER_CHAT_FREIGABE=1 "
+                         "setzen oder auto_send für dieses Postfach aktivieren.")
     _mail_senden(konto, an, betreff, text, html_text, kopf)
     return f"Gesendet von {konto['user']} an {an}."
 
