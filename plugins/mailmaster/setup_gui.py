@@ -125,16 +125,6 @@ class Einrichtung:
 
         knopf(self.rahmen, t("btn_done"), self.wurzel.destroy).pack(anchor="e", pady=(18, 0))
 
-    def auto_umschalten(self, konto, schalter):
-        if schalter.get():
-            if not messagebox.askyesno(t("auto_title"), t("auto_text")):
-                schalter.set(False)
-                return
-        for k in self.konten:
-            if k["user"] == konto["user"]:
-                k["auto_send"] = bool(schalter.get())
-        speichere_geschützt(KONFIG, self.konten)
-
     def konto_löschen(self, konto):
         if not messagebox.askyesno(t("del_title"), t("del_text", adresse=konto["user"])):
             return
