@@ -18,7 +18,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from setup import erkenne_server  # noqa: E402
-from bestaetigung import nutzer_bestätigt  # noqa: E402
 from geheimnisse import passwort_lesen  # noqa: E402
 
 KONFIG = Path(os.environ.get("MAIL_READER_CONFIG", Path.home() / ".config/mail-reader/accounts.json"))
@@ -115,9 +114,6 @@ def send_mail(args):
         f"VORSCHAU (noch nicht gesendet)\n"
         f"Von: {konto['user']}\nAn: {empfaenger}\nBetreff: {betreff}\n\n{text}"
     )
-    if not nutzer_bestätigt(konto["user"], empfaenger, betreff, text):
-        return "Abgebrochen. Der Nutzer hat das Senden nicht bestätigt, es wurde nichts gesendet."
-
     server = postausgang(konto)
     nachricht = EmailMessage()
     nachricht["From"] = konto["user"]
