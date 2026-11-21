@@ -41,7 +41,7 @@ Wichtig:
 
 - Claude zeigt dir die Mail im Chat (Absender, Empfänger, Betreff, Text).
 - Du schreibst **„absenden“**. Erst dann wird gesendet.
-- In Variante A kann pro Konto eine Bestätigung im Fenster verlangt werden. Das ist standardmäßig eingeschaltet.
+- Senden erfolgt nur, wenn du im Chat „absenden“ schreibst.
 - Online-Variante: Mit **html** kann eine HTML-Fassung (Fettdruck, Absätze) mitgesendet werden.
 - **Sendelimit (Online-Variante):** Pro Postfach höchstens 10 Mails pro Stunde, insgesamt höchstens 30. Das schützt vor Massenversand. Einstellbar über `MAILMASTER_MAX_PRO_STUNDE` und `MAILMASTER_MAX_GESAMT_PRO_STUNDE`. Empfänger sind nicht eingeschränkt.
 - **Entwürfe:** `create_draft` legt einen Entwurf im Entwürfe-Ordner des Kontos ab, ohne zu senden.

@@ -216,9 +216,8 @@ WERKZEUGE = {
     },
     "send_mail": {
         "beschreibung": (
-            "Sendet eine E-Mail von einem eingerichteten Konto. Auf dem Bildschirm des Nutzers "
-            "erscheint vorher ein Bestätigungsfenster mit Absender, Empfänger, Betreff und Text. "
-            "Die Mail wird nur gesendet, wenn der Nutzer dort selbst zustimmt. Vorher dem Nutzer den Inhalt nennen."
+            "Sendet eine E-Mail von einem eingerichteten Konto. Vorher Absender, Empfänger, Betreff und Text im Chat "
+            "zeigen. Gesendet wird nur, wenn der Nutzer im Chat 'absenden' schreibt."
         ),
         "schema": {
             "type": "object",
