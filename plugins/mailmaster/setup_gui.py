@@ -122,10 +122,6 @@ class Einrichtung:
             tk.Label(zeile, text=f"{konto['user']}   {konto['host']}", bg=PANEL, fg=FG, font=("Monospace", 9),
                      anchor="w").pack(side="left", fill="x", expand=True)
             knopf(zeile, t("btn_delete"), lambda k=konto: self.konto_löschen(k), farbe=RED).pack(side="right")
-            schalter = tk.BooleanVar(value=bool(konto.get("auto_send", False)))
-            tk.Checkbutton(zeile, text=t("auto_label"), variable=schalter, bg=PANEL, fg=MUTED,
-                           activebackground=PANEL, activeforeground=ACCENT, selectcolor=EINGABE,
-                           font=SCHRIFT, command=lambda k=konto, v=schalter: self.auto_umschalten(k, v)).pack(side="right", padx=8)
 
         knopf(self.rahmen, t("btn_done"), self.wurzel.destroy).pack(anchor="e", pady=(18, 0))
 

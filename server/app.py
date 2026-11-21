@@ -343,9 +343,9 @@ def _senden_oder_anfragen(konto, an, betreff, text, html_text=None, kopf=None, z
         raise ValueError("Der Text der Mail ist leer.")
     if html_text and not text:
         text = _html_zu_text(html_text)
-    if not (konto.get("auto_send") or os.environ.get("MAILMASTER_CHAT_FREIGABE") == "1"):
+    if os.environ.get("MAILMASTER_CHAT_FREIGABE") != "1":
         raise ValueError("Senden ist nicht freigeschaltet. Der Betreiber muss MAILMASTER_CHAT_FREIGABE=1 "
-                         "setzen oder auto_send für dieses Postfach aktivieren.")
+                         "setzen.")
     _mail_senden(konto, an, betreff, text, html_text, kopf)
     return f"Gesendet von {konto['user']} an {an}."
 

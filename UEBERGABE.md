@@ -15,7 +15,7 @@ Die Passwörter bleiben beim jeweiligen Nutzer. Die Online-Variante braucht eine
 - Anhänge: `list_attachments`, `download_attachment` (Text, Bild oder Datei bis 5 MB)
 - Ordner: `create_folder`, `move_mail` (Ziel auch „Papierkorb“, „Spam“, „Gesendet“, „Entwürfe“, „Archiv“)
 - Entwürfe: `create_draft` (legt im Entwürfe-Ordner ab, sendet nicht)
-- Senden: `send_mail` (optional `html`), `reply_mail` (Antwort im Verlauf). Beides nur nach dem Wort „absenden“ im Chat und nur, wenn der Betreiber `MAILMASTER_CHAT_FREIGABE=1` oder `auto_send` setzt (Standard: aus). Sendelimit: 10 Mails pro Stunde je Postfach, 30 insgesamt.
+- Senden: `send_mail` (optional `html`), `reply_mail` (Antwort im Verlauf). Beides nur nach dem Wort „absenden“ im Chat und nur, wenn der Betreiber `MAILMASTER_CHAT_FREIGABE=1` setzt (Standard: aus). Lokal kommt für jede Mail zusätzlich ein Bestätigungsfenster, `auto_send` gibt es nicht mehr. Sendelimit: 10 Mails pro Stunde je Postfach, 30 insgesamt.
 - Verschieben nutzt MOVE oder UID EXPUNGE. Ohne beides wird vorher abgebrochen, damit keine Doppel entstehen.
 - Papierkorb und Sonderordner werden über die Anbieter-Flags (`\Trash`, `\Junk` usw.) erkannt, sonst über typische Namen.
 - Pro Postfach läuft nur eine IMAP-Verbindung gleichzeitig.
