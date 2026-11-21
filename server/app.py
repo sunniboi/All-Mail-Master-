@@ -557,6 +557,58 @@ def move_mail(args):
     return f"Mail {uid} von '{von}' nach '{ziel}' verschoben."
 
 
+def delete_mail(args):
+    """Verschiebt eine Mail in den Papierkorb. Entweder per uid oder per search.
+    Bei search wird nur verschoben, wenn genau eine Mail passt. Sonst passiert nichts."""
+    konto = _einzelkonto(args)
+    von = args.get("folder") or "INBOX"
+    suche = (args.get("search") or "").strip()
+    uid = str(args.get("uid", "")).strip()
+    if not suche and not uid.isdigit():
+        raise ValueError("Bitte uid (Nummer aus der Suche) oder search (Suchbegriff) angeben.")
+    with _sitzung(konto) as imap:
+        liste = _ordnerliste(imap, konto, neu=True)
+        papierkorb = _papierkorb(konto, liste)
+        if not papierkorb:
+            raise ValueError("Kein Papierkorb gefunden. Mit list_folders die Ordner prüfen.")
+        if von.lower() == papierkorb.lower():
+            return "Die Mail liegt schon im Papierkorb."
+        if suche:
+            imap.select(_ordner_name(von), readonly=True)
+            _, daten = imap.uid("SEARCH", None, _suche_pruefen(suche))
+            ids = (daten[0] or b"").split()
+            if not ids:
+                return f"Keine Mail gefunden für '{suche}'. Nichts verschoben."
+            if len(ids) > 1:
+                zeilen = "\n".join(_zeile(u, k) for u, k in reversed(_kopfzeilen(imap, ids[-10:])))
+                return (f"{len(ids)} Mails passen auf '{suche}'. Nichts verschoben. "
+                        f"Bitte genauer suchen oder die UID wählen:\n{zeilen}")
+            uid = ids[0].decode()
+        beschreibung = "\n".join(_zeile(u, k) for u, k in _kopfzeilen(imap, [uid.encode()]))
+        _verschieben(imap, uid, von, papierkorb)
+    _ordner_cache.pop(konto["user"], None)
+    return f"Mail {uid} aus '{von}' in den Papierkorb '{papierkorb}' verschoben.\n{beschreibung}"
+
+
+def empty_trash(args):
+    """Leert den Papierkorb des Kontos endgültig. Nur auf ausdrücklichen Wunsch des Nutzers aufrufen."""
+    konto = _einzelkonto(args)
+    with _sitzung(konto) as imap:
+        liste = _ordnerliste(imap, konto, neu=True)
+        papierkorb = _papierkorb(konto, liste)
+        if not papierkorb:
+            raise ValueError("Kein Papierkorb gefunden. Mit list_folders die Ordner prüfen.")
+        imap.select(_ordner_name(papierkorb))
+        _, daten = imap.uid("SEARCH", None, "ALL")
+        ids = (daten[0] or b"").split()
+        if not ids:
+            return "Der Papierkorb ist schon leer."
+        imap.uid("STORE", b",".join(ids).decode(), "+FLAGS.SILENT", "(\\Deleted)")
+        imap.expunge()
+    _ordner_cache.pop(konto["user"], None)
+    return f"Papierkorb '{papierkorb}' geleert: {len(ids)} Mails endgültig gelöscht."
+
+
 def create_draft(args):
     """Legt einen Entwurf im Entwürfe-Ordner des Kontos ab. Es wird nichts gesendet."""
     konto = _einzelkonto(args)
@@ -636,6 +688,22 @@ WERKZEUGE = {
                    "to_folder": {"type": "string"}},
                    "required": ["account", "uid", "to_folder"]},
         "funktion": move_mail,
+    },
+    "delete_mail": {
+        "beschreibung": ("Löscht eine Mail, indem sie in den Papierkorb des Kontos verschoben wird. Die Mail wird nicht "
+                         "endgültig entfernt. Entweder 'uid' (aus search_mail) oder 'search' (Suchbegriff, z. B. 'FROM \"Hörgeräte\"') angeben. "
+                         "Bei 'search' passiert nur etwas, wenn genau eine Mail passt."),
+        "schema": {"type": "object", "properties": {"account": {"type": "string"}, "uid": {"type": "string"},
+                   "search": {"type": "string", "description": "IMAP-Suche, muss genau eine Mail treffen"},
+                   "folder": {"type": "string", "description": "Ordner der Mail, Standard INBOX"}},
+                   "required": ["account"]},
+        "funktion": delete_mail,
+    },
+    "empty_trash": {
+        "beschreibung": ("Leert den Papierkorb des Kontos ENDGÜLTIG. Nicht rückgängig zu machen. "
+                         "Nur aufrufen, wenn der Nutzer im Chat ausdrücklich 'Papierkorb leeren' oder 'absenden' für genau das schreibt."),
+        "schema": {"type": "object", "properties": {"account": {"type": "string"}}, "required": ["account"]},
+        "funktion": empty_trash,
     },
     "create_draft": {
         "beschreibung": ("Legt einen Entwurf im Entwürfe-Ordner des Kontos ab. Es wird nichts gesendet. "

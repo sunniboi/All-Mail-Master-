@@ -13,7 +13,7 @@ Die Passwörter bleiben beim jeweiligen Nutzer. Die Online-Variante braucht eine
 
 - Lesen und suchen: `list_accounts`, `search_mail`, `read_mail`, `search_all_folders`, `list_folders`
 - Anhänge: `list_attachments`, `download_attachment` (Text, Bild oder Datei bis 5 MB)
-- Ordner: `create_folder`, `move_mail` (Ziel auch „Papierkorb“, „Spam“, „Gesendet“, „Entwürfe“, „Archiv“)
+- Ordner: `create_folder`, `move_mail` (Ziel auch „Papierkorb“, „Spam“, „Gesendet“, „Entwürfe“, „Archiv“), `delete_mail` (in den Papierkorb), `empty_trash` (Papierkorb endgültig leeren)
 - Entwürfe: `create_draft` (legt im Entwürfe-Ordner ab, sendet nicht)
 - Senden: `send_mail` (optional `html`), `reply_mail` (Antwort im Verlauf). Beides nur nach dem Wort „absenden“ im Chat und nur, wenn der Betreiber `MAILMASTER_CHAT_FREIGABE=1` setzt (Standard: aus). Lokal kommt für jede Mail zusätzlich ein Bestätigungsfenster, `auto_send` gibt es nicht mehr. Sendelimit: 10 Mails pro Stunde je Postfach, 30 insgesamt.
 - Verschieben nutzt MOVE oder UID EXPUNGE. Ohne beides wird vorher abgebrochen, damit keine Doppel entstehen.
