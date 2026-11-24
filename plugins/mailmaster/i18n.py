@@ -5,7 +5,7 @@ import os
 
 SPRACHEN = {
     "de": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "E-Mail-Postfach einrichten",
         "label_address": "E-Mail-Adresse",
         "btn_next": "Weiter",
@@ -42,7 +42,7 @@ SPRACHEN = {
         "yahoo_5": "Hier beim Passwort genau dieses Passwort einfügen, nicht dein Yahoo-Login-Passwort.",
     },
     "en": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Set up a mailmaster",
         "label_address": "E-mail address",
         "btn_next": "Next",
@@ -79,7 +79,7 @@ SPRACHEN = {
         "yahoo_5": "Paste exactly this password here, not your Yahoo login password.",
     },
     "fr": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Configurer une boîte mail",
         "label_address": "Adresse e-mail",
         "btn_next": "Suivant",
@@ -116,7 +116,7 @@ SPRACHEN = {
         "yahoo_5": "Collez exactement ce mot de passe ici, pas votre mot de passe de connexion Yahoo.",
     },
     "es": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Configurar un buzón de correo",
         "label_address": "Dirección de correo",
         "btn_next": "Siguiente",
@@ -153,7 +153,7 @@ SPRACHEN = {
         "yahoo_5": "Pega aquí exactamente esta contraseña, no tu contraseña de inicio de Yahoo.",
     },
     "it": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Configura una casella e-mail",
         "label_address": "Indirizzo e-mail",
         "btn_next": "Avanti",
@@ -190,7 +190,7 @@ SPRACHEN = {
         "yahoo_5": "Incolla qui esattamente questa password, non la tua password di accesso Yahoo.",
     },
     "pt": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Configurar uma caixa de e-mail",
         "label_address": "Endereço de e-mail",
         "btn_next": "Avançar",
@@ -227,7 +227,7 @@ SPRACHEN = {
         "yahoo_5": "Cole aqui exatamente esta palavra-passe, não a sua palavra-passe de início de sessão do Yahoo.",
     },
     "nl": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "MailMaster instellen",
         "label_address": "E-mailadres",
         "btn_next": "Volgende",
@@ -264,7 +264,7 @@ SPRACHEN = {
         "yahoo_5": "Plak hier precies dit wachtwoord, niet je Yahoo-inlogwachtwoord.",
     },
     "pl": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Skonfiguruj skrzynkę e-mail",
         "label_address": "Adres e-mail",
         "btn_next": "Dalej",
@@ -301,7 +301,7 @@ SPRACHEN = {
         "yahoo_5": "Wklej tutaj dokładnie to hasło, a nie hasło do logowania w Yahoo.",
     },
     "sv": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Konfigurera en e-postbrevlåda",
         "label_address": "E-postadress",
         "btn_next": "Nästa",
@@ -338,7 +338,7 @@ SPRACHEN = {
         "yahoo_5": "Klistra in exakt det här lösenordet här, inte ditt Yahoo-inloggningslösenord.",
     },
     "da": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Opsæt en mailboks",
         "label_address": "E-mailadresse",
         "btn_next": "Næste",
@@ -375,7 +375,7 @@ SPRACHEN = {
         "yahoo_5": "Indsæt præcis denne adgangskode her, ikke din Yahoo-loginadgangskode.",
     },
     "fi": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Määritä sähköpostitili",
         "label_address": "Sähköpostiosoite",
         "btn_next": "Seuraava",
@@ -412,7 +412,7 @@ SPRACHEN = {
         "yahoo_5": "Liitä tähän täsmälleen tämä salasana, älä Yahoo-kirjautumissalasanaasi.",
     },
     "cs": {
-        "app_title": "J.A.R.V.I.S. MailMaster",
+        "app_title": "J.A.R.V.I.S. All Mail Master",
         "header_add": "Nastavit e-mailovou schránku",
         "label_address": "E-mailová adresa",
         "btn_next": "Další",

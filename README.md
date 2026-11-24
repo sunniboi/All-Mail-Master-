@@ -1,4 +1,6 @@
-# MailMaster
+# All Mail Master (AMM)
+
+Kurzform: **AMM**. Die technischen Bezeichner (`mailmaster`, Repo `claude-mailmaster`) bleiben aus Kompatibilitätsgründen unverändert.
 
 Claude-Erweiterung zum Lesen und Senden von E-Mails aus eigenen Postfächern (Gmail, Yahoo, Freenet, web.de und andere mit IMAP).
 

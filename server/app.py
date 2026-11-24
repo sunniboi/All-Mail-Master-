@@ -1,4 +1,4 @@
-"""MailMaster als Online-Server für Claude (MCP über HTTP).
+"""All Mail Master (AMM) als Online-Server für Claude (MCP über HTTP).
 
 Konfiguration über Umgebungsvariablen:
 - MAILMASTER_TOKEN: geheimer Pfad-Teil, den du in Claude als Connector-Adresse einträgst

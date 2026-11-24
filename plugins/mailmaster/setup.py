@@ -87,7 +87,7 @@ def main():
 
 def einrichten():
     konten = json.loads(KONFIG.read_text(encoding="utf-8")) if KONFIG.exists() else []
-    print("MailMaster einrichten. Bei der Adresse leer lassen, um fertig zu werden.")
+    print("All Mail Master einrichten. Bei der Adresse leer lassen, um fertig zu werden.")
     while True:
         adresse = input("\nE-Mail-Adresse: ").strip()
         if not adresse:

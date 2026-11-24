@@ -1,4 +1,4 @@
-# Übergabe: MailMaster
+# Übergabe: All Mail Master (AMM)
 
 Eindeutiger Name: **mailmaster@mailmaster-plugins**
 
