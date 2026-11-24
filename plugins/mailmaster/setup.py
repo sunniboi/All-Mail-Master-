@@ -18,11 +18,25 @@ ORDNER = Path.home() / ".config/mail-reader"
 KONFIG = ORDNER / "accounts.json"
 
 
+class _NurHttps(urllib.request.HTTPRedirectHandler):
+    """Folgt Weiterleitungen nur auf https."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not newurl.lower().startswith("https://"):
+            return None
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OEFFNER = urllib.request.build_opener(_NurHttps)
+
+
 def lade_xml(url):
     """Lädt eine Konfigurationsdatei des Anbieters. Zu große Dateien und solche mit Entitäts-Deklarationen
     (Angriffe wie XXE oder Billion Laughs) werden abgelehnt, bevor sie ausgewertet werden."""
     try:
-        with urllib.request.urlopen(url, timeout=8) as antwort:
+        with _OEFFNER.open(url, timeout=8) as antwort:
+            if not antwort.geturl().lower().startswith("https://"):
+                return None
             daten = antwort.read(200_000 + 1)
         if len(daten) > 200_000 or b"<!doctype" in daten.lower() or b"<!entity" in daten.lower():
             return None

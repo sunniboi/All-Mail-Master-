@@ -46,11 +46,38 @@ def gcloud(*args, check=True):
     return subprocess.run(["gcloud", *args], capture_output=True, text=True, check=check)
 
 
+class _NurHttps(urllib.request.HTTPRedirectHandler):
+    """Folgt Weiterleitungen nur auf https. Verhindert, dass eine Konfiguration über http geladen wird."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not newurl.lower().startswith("https://"):
+            return None
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OEFFNER = urllib.request.build_opener(_NurHttps)
+
+# Bekannte Anbieter: deren Server dürfen auch dann genutzt werden, wenn sie nicht zur Mail-Domain gehören
+BEKANNTE_ANBIETER = ("gmail.com", "google.com", "googlemail.com", "yahoo.com", "yahoo.de", "web.de", "gmx.net",
+                     "gmx.de", "freenet.de", "mx.freenet.de", "outlook.com", "office365.com", "icloud.com",
+                     "t-online.de", "ionos.de", "1und1.de", "strato.de", "mailbox.org", "posteo.de")
+
+
+def vertrauenswuerdig(host, domain):
+    """Gehört der Server zur Mail-Domain oder zu einem bekannten Anbieter?"""
+    host, domain = host.lower().rstrip("."), domain.lower()
+    zulaessig = (domain,) + BEKANNTE_ANBIETER
+    return any(host == z or host.endswith("." + z) for z in zulaessig)
+
+
 def lade_xml(url):
     """Lädt eine Konfigurationsdatei des Anbieters. Zu große Dateien und solche mit Entitäts-Deklarationen
-    (Angriffe wie XXE oder Billion Laughs) werden abgelehnt, bevor sie ausgewertet werden."""
+    (Angriffe wie XXE oder Billion Laughs) werden abgelehnt, bevor sie ausgewertet werden.
+    Weiterleitungen sind nur auf https erlaubt."""
     try:
-        with urllib.request.urlopen(url, timeout=8) as antwort:
+        with _OEFFNER.open(url, timeout=8) as antwort:
+            if not antwort.geturl().lower().startswith("https://"):
+                return None
             daten = antwort.read(200_000 + 1)
         if len(daten) > 200_000 or b"<!doctype" in daten.lower() or b"<!entity" in daten.lower():
             return None
@@ -140,6 +167,14 @@ def konto_abfragen(vorhandene=()):
         print("Server werden gesucht ...")
         server = erkenne_server(domain)
         print(f"Gefunden: {server['host']} (Empfangen), {server['smtp_host']} (Senden)")
+        fremd = [h for h in (server["host"], server["smtp_host"]) if not vertrauenswuerdig(h, domain)]
+        if fremd:
+            print(f"\nACHTUNG: {', '.join(fremd)} gehört weder zu {domain} noch zu einem bekannten Anbieter.")
+            print("Dein Passwort würde an diesen Server geschickt. Fahre nur fort, wenn du ihn kennst, "
+                  "zum Beispiel weil dein Hoster ihn nennt.")
+            if not input("Diesem Server das Passwort schicken? (j/n): ").strip().lower().startswith("j"):
+                print("Dieses Postfach wird übersprungen.")
+                continue
         passwort = getpass.getpass(f"Passwort für {adresse} (wird nicht angezeigt): ")
         if not passwort:
             print("Kein Passwort eingegeben.")
