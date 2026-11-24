@@ -19,9 +19,14 @@ KONFIG = ORDNER / "accounts.json"
 
 
 def lade_xml(url):
+    """Lädt eine Konfigurationsdatei des Anbieters. Zu große Dateien und solche mit Entitäts-Deklarationen
+    (Angriffe wie XXE oder Billion Laughs) werden abgelehnt, bevor sie ausgewertet werden."""
     try:
         with urllib.request.urlopen(url, timeout=8) as antwort:
-            return ET.fromstring(antwort.read())
+            daten = antwort.read(200_000 + 1)
+        if len(daten) > 200_000 or b"<!doctype" in daten.lower() or b"<!entity" in daten.lower():
+            return None
+        return ET.fromstring(daten)
     except Exception:
         return None
 

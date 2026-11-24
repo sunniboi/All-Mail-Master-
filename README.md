@@ -24,16 +24,28 @@ Im Fenster E-Mail-Adresse eingeben. Der Server wird automatisch gefunden. Dann d
 
 **Updates:** Beim Start fragt das Plugin, ob eine neue Version installiert werden soll. Dafür erscheint ein Fenster.
 
-## B: Online-Server für Claude im Browser
+## B: Online-Server für Claude im Browser und am Handy
 
-Diese Variante läuft auf einem Server bei Google Cloud. Claude im Browser und in der App spricht mit diesem Server. Sie ist technisch aufwendiger als Variante A.
+Diese Variante läuft auf einem Server bei Google Cloud, in deinem eigenen Konto. Claude im Browser und in der App spricht mit diesem Server. Sie ist technisch aufwendiger als Variante A, deshalb gibt es eine **geführte Einrichtung** (Variante C).
 
-Einrichtung in Kurzform:
+### Variante C: Geführte Einrichtung
+
+Öffne `einrichtung/index.html` im Browser. Die Seite fragt nach deiner Erfahrung (Anfänger, Fortgeschritten, Profi), zeigt die geschätzte Dauer und führt dich durch alle Schritte: Google-Cloud-Konto, Projekt, Cloud Shell, App-Passwörter, Installation, Verbindung in Claude und Test. Jeder Befehl steht fertig da und lässt sich mit einem Klick kopieren. Die Zeiten sind Schätzungen und noch nicht mit echten Nutzern gemessen.
+
+Das Installationsskript in der Cloud Shell:
+
+    cd claude-mailmaster/server
+    python3 install.py          # Erstinstallation: Dienste einschalten, Postfächer abfragen, veröffentlichen
+    python3 install.py --adresse   # Verbindungsadresse erneut anzeigen
+    python3 add_account.py      # weiteres Postfach eintragen
+
+Passwörter werden dabei nur verdeckt im Terminal abgefragt. Die Anmeldung wird vor dem Veröffentlichen getestet. Die Server der Anbieter werden wie in Thunderbird automatisch gefunden.
+
+### Manuell (Kurzform)
 
 1. Ein Google-Cloud-Konto anlegen (Testzeitraum mit Guthaben, Kreditkarte zur Prüfung).
-2. Den Server über die Cloud Shell aus diesem Repo veröffentlichen (Ordner `server/`, Skript `update.py`).
-3. Die Postfächer mit App-Passwörtern eintragen (Skripte in der Cloud Shell).
-4. In Claude unter Einstellungen → Konnektoren einen benutzerdefinierten Konnektor mit der Server-Adresse anlegen. Authentifizierung: Keine.
+2. In der Cloud Shell das Repo holen und `python3 install.py` im Ordner `server/` ausführen.
+3. In Claude unter Einstellungen → Konnektoren einen benutzerdefinierten Konnektor mit der ausgegebenen Adresse anlegen. Authentifizierung: Keine.
 
 Wichtig:
 - Die Passwörter liegen bei dieser Variante als Umgebungsvariablen im Google-Cloud-Projekt. Nur der Projekt-Besitzer kann sie sehen. Sie landen nie im Repo.

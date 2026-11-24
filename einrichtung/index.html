@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMM einrichten</title>
+<style>
+:root {
+  --bg: #0f1419; --panel: #172029; --line: #26323f; --fg: #e6edf3; --muted: #8b9bab;
+  --accent: #4cc9a6; --accent-fg: #07211a; --warn: #f0b429; --done: #14302b; color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa; --panel: #ffffff; --line: #d8dee4; --fg: #1f2328; --muted: #59636e;
+    --accent: #0d7d63; --accent-fg: #ffffff; --warn: #9a6700; --done: #e6f4ef; color-scheme: light;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px max(16px, env(safe-area-inset-right)) 64px max(16px, env(safe-area-inset-left)); }
+main { max-width: 760px; margin: 0 auto; }
+h1 { font-size: 24px; margin: 0 0 4px; text-wrap: balance; }
+h2 { font-size: 17px; margin: 32px 0 10px; }
+p { margin: 0 0 10px; }
+.lead { color: var(--muted); margin-bottom: 20px; }
+.stufen { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.stufe { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 12px 14px; text-align: left;
+  font: inherit; color: var(--fg); cursor: pointer; }
+.stufe[aria-pressed="true"] { border-color: var(--accent); }
+.stufe b { display: block; font-size: 16px; }
+.stufe .zeit { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 600; }
+.stufe small { display: block; color: var(--muted); margin-top: 4px; }
+.fortschritt { display: flex; align-items: center; gap: 12px; margin: 22px 0 6px; }
+.balken { flex: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.balken div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.zahl { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.schaetzung { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+.schritt { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; }
+.schritt.erledigt { background: var(--done); }
+.kopf { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; }
+.kopf input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--accent); }
+.kopf label { flex: 1; cursor: pointer; }
+.kopf .titel { font-weight: 600; }
+.erledigt .titel { color: var(--muted); text-decoration: line-through; }
+.kopf .min { color: var(--muted); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.inhalt { padding: 0 14px 14px 46px; }
+.inhalt ol, .inhalt ul { margin: 0 0 10px; padding-left: 20px; }
+.inhalt li { margin-bottom: 4px; }
+.befehl { display: flex; gap: 8px; align-items: stretch; margin: 8px 0; }
+.befehl pre { flex: 1; margin: 0; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  overflow-x: auto; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre; }
+button.btn, a.btn { font: inherit; font-size: 14px; color: var(--fg); background: transparent; border: 1px solid var(--line);
+  border-radius: 6px; padding: 6px 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+button.btn.primaer, a.btn.primaer { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.warnung { border-left: 3px solid var(--warn); padding: 6px 12px; margin: 10px 0; color: var(--fg); background: var(--bg); border-radius: 0 6px 6px 0; }
+.feld { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.feld input[type=text] { font: inherit; padding: 6px 10px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; min-width: 14em; }
+.feld .fehler { color: var(--warn); font-size: 13px; }
+.sicher { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 18px 0; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.klein { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>All Mail Master (AMM) einrichten</h1>
+  <p class="lead">Diese Seite führt dich durch die Einrichtung deines eigenen Servers. Du brauchst dafür ein Google-Konto. Alle Befehle und Links stehen hier, du musst nur klicken, kopieren und einfügen.</p>
+
+  <div class="sicher">
+    <b>So bleibt alles bei dir:</b> Dein Server läuft in deinem eigenen Google-Cloud-Konto. Passwörter und die Verbindungsadresse gibst du nur im Terminal der Cloud Shell oder in Claude ein, nie auf dieser Seite und nie im Chat. Diese Seite speichert nur deine Haken und die Projekt-ID in deinem Browser.
+  </div>
+
+  <h2>1. Wähle deine Erfahrung</h2>
+  <div class="stufen" id="stufen" role="group" aria-label="Erfahrungsstufe"></div>
+
+  <div class="fortschritt">
+    <div class="balken"><div id="balken"></div></div>
+    <span class="zahl" id="zahl"></span>
+  </div>
+  <p class="schaetzung" id="schaetzung"></p>
+
+  <h2>2. Schritte</h2>
+  <div id="schritte"></div>
+
+  <h2>Danach</h2>
+  <div id="danach"></div>
+  <p class="klein">Die Zeitangaben sind grobe Schätzungen und noch nicht mit echten Nutzern gemessen. Kosten und Bedingungen bei Google ändern sich. Verbindlich ist nur, was Google dir anzeigt.</p>
+</main>
+
+<script>
+"use strict";
+const REPO = "https://github.com/sunniboi/claude-mailmaster";
+const TUTORIAL = "https://shell.cloud.google.com/?cloudshell_git_repo=" + encodeURIComponent(REPO) +
+  "&cloudshell_tutorial=einrichtung/tutorial.md&cloudshell_workspace=server&show=ide%2Cterminal";
+const SHELL = "https://shell.cloud.google.com/?show=terminal";
+
+const STUFEN = {
+  a: { name: "Anfänger", info: "Ich habe noch nie ein Terminal benutzt. Zeige mir jeden Klick." },
+  k: { name: "Fortgeschritten", info: "Google-Konto und Browser sind kein Problem. Gib mir die Schritte kompakt." },
+  p: { name: "Profi", info: "Nur die Befehle und Links." }
+};
+
+// Ein Schritt hat je Stufe eine Zeit in Minuten und einen Text als Liste von Zeilen.
+const SCHRITTE = [
+  { id: "google", titel: "Google-Konto bereithalten", min: { a: 5, k: 1, p: 0 },
+    text: {
+      a: ["Du brauchst ein normales Google-Konto (eine Gmail-Adresse). Hast du keines, lege eines an.",
+          "Melde dich im Browser an. Das Konto bleibt dein eigenes."],
+      k: ["Ein Google-Konto zum Anmelden bei Google Cloud."],
+      p: ["Google-Konto vorhanden."] },
+    links: [{ t: "Google-Konto öffnen", u: "https://accounts.google.com/" }] },
+
+  { id: "cloud", titel: "Google-Cloud-Konto anlegen", min: { a: 15, k: 8, p: 3 },
+    text: {
+      a: ["Öffne die Seite von Google Cloud und klicke auf „Kostenlos testen“ oder „Console“.",
+          "Google fragt nach Land, Zahlungsdaten (Karte) und Bedingungen. Das dient der Prüfung, dass du ein Mensch bist.",
+          "Lies bei Google, was dich das kostet. Bei geringer Nutzung fallen nach bisherigen Erfahrungen meist keine oder sehr geringe Kosten an. Verbindlich ist nur die Preisseite von Google.",
+          "Du gibst Zahlungsdaten nur auf Google-Seiten ein, niemals hier."],
+      k: ["Cloud-Konto anlegen und Abrechnung einrichten (Karte zur Prüfung). Preise prüfst du bei Google."],
+      p: ["Cloud-Konto mit Abrechnung vorhanden."] },
+    links: [{ t: "Google Cloud öffnen", u: "https://console.cloud.google.com/" },
+            { t: "Preise von Cloud Run", u: "https://cloud.google.com/run/pricing" }] },
+
+  { id: "projekt", titel: "Projekt anlegen und Abrechnung verknüpfen", min: { a: 10, k: 5, p: 2 },
+    text: {
+      a: ["Ein Projekt ist dein Bereich in Google Cloud. Klicke oben auf die Projektauswahl und dann auf „Neues Projekt“.",
+          "Gib einen Namen ein, zum Beispiel „amm“, und klicke auf „Erstellen“.",
+          "Notiere die **Projekt-ID** (sie steht unter dem Namen, in Kleinbuchstaben, oft mit einer Zahl). Trage sie unten ein. Dann sind die Befehle schon richtig ausgefüllt.",
+          "Öffne die Abrechnung und prüfe, dass dein Projekt mit einem Rechnungskonto verknüpft ist."],
+      k: ["Neues Projekt anlegen, Projekt-ID unten eintragen, Abrechnung mit dem Projekt verknüpfen."],
+      p: ["Projekt anlegen, Abrechnung verknüpfen, Projekt-ID unten eintragen."] },
+    links: [{ t: "Projekt anlegen", u: "https://console.cloud.google.com/projectcreate" },
+            { t: "Abrechnung", u: "https://console.cloud.google.com/billing" }],
+    projektfeld: true },
+
+  { id: "shell", titel: "Cloud Shell öffnen", min: { a: 5, k: 2, p: 1 },
+    text: {
+      a: ["Die Cloud Shell ist ein Terminal in deinem Browser: ein Fenster, in das du Befehle einfügst. Es läuft bei Google, du installierst nichts.",
+          "Klicke auf den Knopf. Es öffnet sich ein neuer Tab mit einem schwarzen Fenster. Bestätige, wenn Google fragt, ob du die Cloud Shell starten willst.",
+          "Warte, bis dort eine Zeile mit einem Dollarzeichen ($) steht."],
+      k: ["Cloud Shell in einem neuen Tab öffnen und warten, bis die Eingabezeile da ist."],
+      p: ["Cloud Shell öffnen."] },
+    links: [{ t: "Cloud Shell öffnen", u: SHELL, primaer: true }] },
+
+  { id: "code", titel: "Programm holen", min: { a: 5, k: 2, p: 1 },
+    text: {
+      a: ["Kopiere den Befehl mit dem Knopf „Kopieren“. Klicke in das schwarze Fenster der Cloud Shell, füge ihn mit Strg+V ein (Mac: Cmd+V) und drücke Enter.",
+          "Der Befehl lädt das Programm auf deine Cloud Shell. Das dauert wenige Sekunden."],
+      k: ["In der Cloud Shell ausführen:"],
+      p: [] },
+    befehle: ["git clone " + REPO + ".git claude-mailmaster && cd claude-mailmaster/server"] },
+
+  { id: "projektsetzen", titel: "Projekt festlegen", min: { a: 3, k: 1, p: 1 },
+    text: {
+      a: ["Sag der Cloud Shell, welches Projekt sie nutzen soll. Der Befehl enthält deine Projekt-ID, wenn du sie oben eingetragen hast.",
+          "Falls Google nach einer Berechtigung fragt, klicke auf „Autorisieren“."],
+      k: ["Projekt setzen:"],
+      p: [] },
+    befehle: ["@PROJEKT"] },
+
+  { id: "passwoerter", titel: "App-Passwörter für deine Postfächer besorgen", min: { a: 20, k: 10, p: 5 },
+    text: {
+      a: ["Manche Anbieter erlauben Programmen nur ein eigenes „App-Passwort“, nicht dein normales Passwort. Erstelle es bei deinem Anbieter und schreibe es auf einen Zettel.",
+          "Gmail: Dafür muss die „Bestätigung in zwei Schritten“ eingeschaltet sein. Dann auf der Seite für App-Passwörter ein Passwort mit dem Namen „AMM“ erstellen.",
+          "Yahoo, WEB.DE und GMX: In den Sicherheits- bzw. Postfach-Einstellungen IMAP aktivieren und ein App-Passwort erstellen.",
+          "Freenet: Meist reicht dein normales Passwort.",
+          "Zeigt Google eine Identitätsprüfung, die sich nicht lösen lässt, probiere es auf deinem Handy oder warte einen Tag. Weitere Versuche am selben Tag machen es meist schlimmer."],
+      k: ["Gmail, Yahoo, WEB.DE, GMX: IMAP aktivieren und App-Passwort erstellen (Gmail setzt die Bestätigung in zwei Schritten voraus). Freenet: normales Passwort."],
+      p: ["App-Passwörter bereithalten (Gmail braucht die Bestätigung in zwei Schritten)."] },
+    links: [{ t: "Gmail: App-Passwörter", u: "https://myaccount.google.com/apppasswords" },
+            { t: "Yahoo: Sicherheit", u: "https://login.yahoo.com/account/security" },
+            { t: "WEB.DE", u: "https://web.de" }, { t: "GMX", u: "https://www.gmx.net" }],
+    warnung: "Das Passwort gehört nur ins Terminal der Cloud Shell. Nicht in diese Seite, nicht in einen Chat, nicht in eine E-Mail." },
+
+  { id: "install", titel: "Installationsskript starten", min: { a: 10, k: 6, p: 5 },
+    text: {
+      a: ["Füge den Befehl in die Cloud Shell ein und drücke Enter. Das Skript fragt dich dann nacheinander:",
+          "• Deine E-Mail-Adresse. Die Server deines Anbieters findet es selbst.",
+          "• Das Passwort. Beim Eintippen erscheint nichts auf dem Bildschirm, das ist normal. Mit Enter bestätigen.",
+          "• Danach eine weitere Adresse, oder leer lassen mit Enter, wenn du fertig bist.",
+          "Dann veröffentlicht es den Server. Das dauert einige Minuten. Am Ende zeigt es eine lange Adresse an. Sie ist wie ein Passwort. Lass das Fenster offen, bis du sie in Claude eingetragen hast."],
+      k: ["Das Skript schaltet die Dienste ein, fragt Postfächer ab (Passwort verdeckt), veröffentlicht den Server und zeigt die Verbindungsadresse."],
+      p: [] },
+    befehle: ["python3 install.py"],
+    warnung: "Die Adresse am Ende enthält ein Geheimnis. Nur in Claude eintragen. Später erneut anzeigen: python3 install.py --adresse" },
+
+  { id: "claude", titel: "In Claude verbinden", min: { a: 5, k: 3, p: 2 },
+    text: {
+      a: ["Öffne Claude im Browser und gehe zu Einstellungen → Konnektoren.",
+          "Wähle „Benutzerdefinierten Konnektor hinzufügen“.",
+          "Name: All Mail Master. Adresse: die lange Adresse aus der Cloud Shell. Authentifizierung: keine.",
+          "Speichern."],
+      k: ["Claude → Einstellungen → Konnektoren → Benutzerdefinierter Konnektor: Name AMM, Adresse aus der Cloud Shell, keine Authentifizierung."],
+      p: ["Konnektor mit der Adresse eintragen, keine Authentifizierung."] },
+    links: [{ t: "Claude-Einstellungen", u: "https://claude.ai/settings/connectors", primaer: true }] },
+
+  { id: "test", titel: "Testen", min: { a: 5, k: 3, p: 2 },
+    text: {
+      a: ["Öffne einen neuen Chat. Werkzeuge werden für jeden Chat neu geladen.",
+          "Schreibe: „Liste meine Postfächer auf.“ Es müssen deine Adressen erscheinen.",
+          "Dann: „Zeig mir die neuesten Mails in [deine Adresse].“",
+          "Zum Senden zeigt Claude dir die Mail im Chat. Erst nach deinem Wort „absenden“ geht sie raus."],
+      k: ["Neuer Chat: Postfächer auflisten, Mails anzeigen, Testmail an dich selbst. Gesendet wird nach „absenden“."],
+      p: ["Neuer Chat, list_accounts, Testmail."] }
+  }
+];
+
+const DANACH = [
+  { titel: "Weiteres Postfach eintragen", befehl: "cd ~/claude-mailmaster/server && python3 add_account.py",
+    text: "Fragt Adresse und Passwort ab, testet die Anmeldung und aktualisiert den Server." },
+  { titel: "Papierkorb festlegen", befehl: "cd ~/claude-mailmaster/server && python3 set_trash.py DEINE@ADRESSE ORDNERNAME",
+    text: "Nur nötig, wenn Löschen nicht klappt. Den Ordnernamen zeigt list_folders in Claude." },
+  { titel: "Auf den neuesten Stand bringen", befehl: "cd ~/claude-mailmaster && git pull && cd server && python3 update.py",
+    text: "Holt neue Funktionen und veröffentlicht sie. Danach den Konnektor in Claude neu verbinden." }
+];
+
+const KEY = "amm-einrichtung-v1";
+let zustand = { stufe: "a", haken: {}, projekt: "" };
+try { const g = JSON.parse(localStorage.getItem(KEY) || "{}"); zustand = Object.assign(zustand, g); } catch (e) {}
+if (!STUFEN[zustand.stufe]) zustand.stufe = "a";
+const speichern = () => { try { localStorage.setItem(KEY, JSON.stringify(zustand)); } catch (e) {} };
+
+const PROJEKT_ID = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/;
+const projektOk = () => PROJEKT_ID.test(zustand.projekt);
+
+function el(tag, attrs, ...kinder) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+  }
+  kinder.flat().forEach(k => { if (k != null) e.append(k); });
+  return e;
+}
+
+// Fett-Markierung **text** ohne HTML-Einfügen
+function mitFett(text) {
+  const teile = text.split("**");
+  return teile.map((t, i) => i % 2 ? el("b", { text: t }) : document.createTextNode(t));
+}
+
+function kopierknopf(getText) {
+  const b = el("button", { class: "btn", type: "button", text: "Kopieren" });
+  b.addEventListener("click", async () => {
+    const text = getText();
+    if (!text) return;
+    try { await navigator.clipboard.writeText(text); b.textContent = "Kopiert"; }
+    catch (e) { b.textContent = "Bitte von Hand markieren"; }
+    setTimeout(() => { b.textContent = "Kopieren"; }, 1800);
+  });
+  return b;
+}
+
+function befehlsBlock(roh) {
+  const pre = el("pre");
+  const text = () => roh === "@PROJEKT"
+    ? "gcloud config set project " + (projektOk() ? zustand.projekt : "DEINE-PROJEKT-ID")
+    : roh;
+  pre.textContent = text();
+  const box = el("div", { class: "befehl" }, pre, kopierknopf(() => {
+    if (roh === "@PROJEKT" && !projektOk()) return null;
+    return text();
+  }));
+  box._aktualisieren = () => { pre.textContent = text(); };
+  return box;
+}
+
+const bloecke = [];
+
+function zeichneStufen() {
+  const wurzel = document.getElementById("stufen");
+  wurzel.replaceChildren();
+  for (const [id, s] of Object.entries(STUFEN)) {
+    const summe = SCHRITTE.reduce((a, x) => a + x.min[id], 0);
+    const b = el("button", { class: "stufe", type: "button", "aria-pressed": String(zustand.stufe === id) },
+      el("b", { text: s.name }),
+      el("span", { class: "zeit", text: "ca. " + summe + " Min" }),
+      el("small", { text: s.info }));
+    b.addEventListener("click", () => { zustand.stufe = id; speichern(); zeichne(); });
+    wurzel.append(b);
+  }
+}
+
+function zeichneSchritte() {
+  const wurzel = document.getElementById("schritte");
+  wurzel.replaceChildren();
+  bloecke.length = 0;
+  SCHRITTE.forEach((s, i) => {
+    const box = el("input", { type: "checkbox", id: "h-" + s.id });
+    box.checked = !!zustand.haken[s.id];
+    const li = el("div", { class: "schritt" + (box.checked ? " erledigt" : "") });
+    const kopf = el("div", { class: "kopf" }, box,
+      el("label", { for: "h-" + s.id }, el("span", { class: "titel", text: (i + 1) + ". " + s.titel })),
+      el("span", { class: "min", text: s.min[zustand.stufe] + " Min" }));
+    const inhalt = el("div", { class: "inhalt" });
+    const zeilen = s.text[zustand.stufe] || [];
+    const liste = zeilen.length > 1 ? el("ol") : null;
+    let unterliste = null;
+    zeilen.forEach(z => {
+      if (!liste) { inhalt.append(el("p", {}, mitFett(z))); return; }
+      if (z.startsWith("•")) {
+        // Aufzählungspunkte gehören unter den vorherigen nummerierten Punkt
+        if (!unterliste) { unterliste = el("ul"); liste.lastElementChild.append(unterliste); }
+        unterliste.append(el("li", {}, mitFett(z.replace(/^•\s*/, ""))));
+      } else {
+        unterliste = null;
+        liste.append(el("li", {}, mitFett(z)));
+      }
+    });
+    if (liste) inhalt.append(liste);
+    if (s.projektfeld) {
+      const feld = el("input", { type: "text", id: "projekt", autocomplete: "off", spellcheck: "false",
+        placeholder: "Projekt-ID, z. B. amm-123456", "aria-label": "Projekt-ID" });
+      feld.value = zustand.projekt;
+      const meldung = el("span", { class: "fehler" });
+      feld.addEventListener("input", () => {
+        zustand.projekt = feld.value.trim();
+        meldung.textContent = zustand.projekt && !projektOk()
+          ? "Eine Projekt-ID hat 6 bis 30 Zeichen: Kleinbuchstaben, Ziffern und Bindestriche." : "";
+        speichern(); bloecke.forEach(b => b._aktualisieren && b._aktualisieren());
+      });
+      inhalt.append(el("div", { class: "feld" }, el("label", { for: "projekt", text: "Projekt-ID:" }), feld, meldung));
+    }
+    if (s.befehle) s.befehle.forEach(b => { const blk = befehlsBlock(b); bloecke.push(blk); inhalt.append(blk); });
+    if (s.links) inhalt.append(el("div", { class: "links" }, s.links.map(l =>
+      el("a", { class: "btn" + (l.primaer ? " primaer" : ""), href: l.u, target: "_blank", rel: "noopener noreferrer", text: l.t }))));
+    if (s.id === "shell") inhalt.append(el("p", { class: "klein" }, "Alternative mit Klick-Anleitung im Terminal: ",
+      el("a", { href: TUTORIAL, target: "_blank", rel: "noopener noreferrer", text: "Cloud-Shell-Anleitung öffnen" }),
+      " (noch nicht ausführlich getestet)."));
+    if (s.warnung) inhalt.append(el("div", { class: "warnung", text: s.warnung }));
+    li.append(kopf, inhalt);
+    box.addEventListener("change", () => {
+      zustand.haken[s.id] = box.checked; li.classList.toggle("erledigt", box.checked); speichern(); fortschritt();
+    });
+    wurzel.append(li);
+  });
+}
+
+function zeichneDanach() {
+  const wurzel = document.getElementById("danach");
+  wurzel.replaceChildren();
+  DANACH.forEach(d => {
+    const roh = d.befehl;
+    wurzel.append(el("div", { class: "schritt" }, el("div", { class: "kopf" },
+      el("div", { style: "flex:1" }, el("div", { class: "titel", text: d.titel }),
+        el("p", { class: "klein", text: d.text }),
+        el("div", { class: "befehl" }, el("pre", { text: roh }), kopierknopf(() => roh))))));
+  });
+}
+
+function fortschritt() {
+  const st = zustand.stufe;
+  const offen = SCHRITTE.filter(s => !zustand.haken[s.id]);
+  const fertig = SCHRITTE.length - offen.length;
+  document.getElementById("balken").style.width = (fertig / SCHRITTE.length * 100) + "%";
+  document.getElementById("zahl").textContent = fertig + " von " + SCHRITTE.length + " erledigt";
+  const rest = offen.reduce((a, s) => a + s.min[st], 0);
+  document.getElementById("schaetzung").textContent = offen.length
+    ? "Noch etwa " + rest + " Minuten als " + STUFEN[st].name + " (Schätzung)."
+    : "Alles erledigt. AMM ist eingerichtet.";
+}
+
+function zeichne() { zeichneStufen(); zeichneSchritte(); fortschritt(); }
+zeichne();
+zeichneDanach();
+</script>
+</body>
+</html>

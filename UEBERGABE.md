@@ -20,4 +20,6 @@ Die Passwörter bleiben beim jeweiligen Nutzer. Die Online-Variante braucht eine
 - Papierkorb und Sonderordner werden über die Anbieter-Flags (`\Trash`, `\Junk` usw.) erkannt, sonst über typische Namen.
 - Pro Postfach läuft nur eine IMAP-Verbindung gleichzeitig.
 
+**Geführte Einrichtung (Variante C):** `einrichtung/index.html` (Stufen Anfänger, Fortgeschritten, Profi mit Zeitschätzung) und `einrichtung/tutorial.md` (Cloud-Shell-Anleitung). Skripte in `server/`: `install.py` (Erstinstallation, `--adresse`), `add_account.py`, gemeinsame Hilfen in `amm_tools.py`. Die Cloud-Shell-Anleitung und das Skript gegen echtes Google Cloud sind noch nicht getestet.
+
 **Veröffentlichen:** Nach dem Push auf GitHub muss der Cloud-Run-Dienst aktualisiert werden. In der Cloud Shell: `git pull` im Repo, dann `cd server && python3 update.py`. Erst danach läuft die neue Version.
