@@ -90,6 +90,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 
 <script>
 "use strict";
+// In Jarvis Office eingebettet: dunkles Design erzwingen (?theme=dark)
+if (new URLSearchParams(location.search).get("theme") === "dark") document.documentElement.dataset.theme = "dark";
 const REPO = "https://github.com/sunniboi/claude-mailmaster";
 const TUTORIAL = "https://shell.cloud.google.com/?cloudshell_git_repo=" + encodeURIComponent(REPO) +
   "&cloudshell_tutorial=einrichtung/tutorial.md&cloudshell_workspace=server&show=ide%2Cterminal";
